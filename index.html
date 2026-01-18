@@ -9,7 +9,121 @@
     .card { border: 1px solid rgba(255,255,255,0.10); background: rgba(0,0,0,0.55); }
     .subtle { color: rgba(255,255,255,0.78); }
     .tiny { color: rgba(255,255,255,0.60); font-size: 12px; }
+    .section-header { 
+      font-size: 1.25rem; 
+      font-weight: 600; 
+      margin-top: 2rem; 
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.9);
+    }
+    .section-subtitle {
+      font-size: 0.875rem;
+      color: rgba(255,255,255,0.6);
+      font-weight: 400;
+      margin-top: 0.25rem;
+    }
+    .section-header:first-child { margin-top: 0; }
+    .answer-btn {
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(0,0,0,0.4);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+      width: 100%;
+      color: rgba(255,255,255,0.78);
+      margin-bottom: 0.5rem;
+    }
+    .answer-btn:hover {
+      background: rgba(0,0,0,0.6);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .answer-btn.selected {
+      background: rgba(255,255,255,0.15);
+      border-color: rgba(255,255,255,0.4);
+      color: white;
+      font-weight: 500;
+    }
+    .question-number {
+      color: #d4af37;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+      text-align: center;
+      font-family: 'Cinzel', serif;
+    }
+    .wound-indicator {
+      background: rgba(220, 20, 60, 0.2);
+      border-left: 3px solid #dc143c;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 5px;
+    }
+    .wound-label {
+      color: #dc143c;
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+    }
+    .no-masks-message {
+      text-align: center;
+      padding: 40px;
+      background: rgba(50, 205, 50, 0.1);
+      border: 2px solid rgba(50, 205, 50, 0.3);
+      border-radius: 10px;
+      margin: 30px 0;
+    }
+    .no-masks-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.8rem;
+      color: #32cd32;
+      margin-bottom: 15px;
+    }
+    .no-masks-text {
+      font-size: 1.2rem;
+      color: #b8a084;
+      line-height: 1.6;
+    }
+    .result-card {
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .result-rank {
+      color: #d4af37;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .result-mask-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+    .result-detail {
+      margin: 10px 0;
+      color: rgba(255,255,255,0.78);
+      line-height: 1.6;
+    }
+    .result-label {
+      font-weight: 600;
+      color: #d4af37;
+    }
+    .result-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
   </style>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body class="min-h-screen bg-black text-white">
@@ -21,7 +135,7 @@
         This tracks which masks are most common and which relationship problems they cluster around.
       </p>
       <p class="mt-2 tiny">
-        Rating scale: 1 = not me, 3 = sometimes, 5 = that is me.
+        Choose the answer that feels most true for you.
       </p>
     </header>
 
@@ -147,51 +261,253 @@
   </div>
 
   <script>
-    // Your existing Google Apps Script webhook
     const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzceOf9UGdAiJbHjSoQqZewdFqm_SZoM80AQKAMkGZqpn5CiVD1yDRwqWELRewdQ9fVDw/exec";
+    const totalQuestions = 28;
 
-    const TYPES = [
-      { key: "performer", label: "The Performer", subtitle: "Emotional Shapeshifter" },
-      { key: "analyzer", label: "The Analyzer", subtitle: "Pattern Scanner" },
-      { key: "fixer", label: "The Fixer", subtitle: "Rescuer Engine" },
-      { key: "vanisher", label: "The Vanisher", subtitle: "Disappear to Regulate" },
+    const SECTIONS = [
+      { id: "part1", title: "Part 1: What You Do", subtitle: "How you typically behave in relationships and conflicts" },
+      { id: "part2", title: "Part 2: What You Can't Stop", subtitle: "The compulsions and fears that drive your behavior" },
+      { id: "part3", title: "Part 3: What Drains You", subtitle: "Where your energy goes and what you resent" },
+      { id: "part4", title: "Part 4: Who You Are Without It", subtitle: "What you believe about yourself and your worth" }
     ];
+
+    const strategyColors = {
+      power: '#b8860b',
+      rescue: '#cd853f',
+      performance: '#daa520',
+      withdrawal: '#8b7355',
+      analysis: '#9370db'
+    };
+
+    // Masks database - comprehensive profiles for matching
+    const masks = {
+      translator: {
+        name: "The Translator",
+        strategy: "performance",
+        anxiety: 4, avoidance: 2, meta: 5, empathy: 4, activation: 3, canSayNo: 2, canLeave: 3,
+        wound: "No one else sees what I see - I must bridge the gap",
+        fear: "Communication will break down without me",
+        light: "Skilled communicator who helps people understand each other (when chosen, not compelled)"
+      },
+      martyr: {
+        name: "The Martyr",
+        strategy: "rescue",
+        anxiety: 5, avoidance: 1, meta: 2, empathy: 5, activation: 4, canSayNo: 1, canLeave: 1,
+        wound: "My needs are burdensome - I must sacrifice myself",
+        fear: "Being seen as selfish or too much",
+        light: "Generous person who can also receive (when not driven by fear of rejection)"
+      },
+      chameleon: {
+        name: "The Chameleon",
+        strategy: "performance",
+        anxiety: 5, avoidance: 2, meta: 3, empathy: 3, activation: 4, canSayNo: 1, canLeave: 2,
+        wound: "The real me will be rejected - I must adapt",
+        fear: "Being seen and rejected for who I really am",
+        light: "Socially adaptive person with authentic core (when not hiding in fear)"
+      },
+      hero: {
+        name: "The Hero",
+        strategy: "rescue",
+        anxiety: 4, avoidance: 2, meta: 3, empathy: 4, activation: 4, canSayNo: 2, canLeave: 2,
+        wound: "I'm only valuable if I'm useful - I must save others",
+        fear: "Being worthless if not rescuing",
+        light: "Helpful person who can also rest (when not proving worth through exhaustion)"
+      },
+      perfectionist: {
+        name: "The Perfectionist",
+        strategy: "analysis",
+        anxiety: 4, avoidance: 3, meta: 5, empathy: 2, activation: 4, canSayNo: 4, canLeave: 3,
+        wound: "Any flaw makes me worthless - I must be flawless",
+        fear: "Being exposed as imperfect and discarded",
+        light: "Excellence-oriented person who can tolerate imperfection (when not driven by shame)"
+      },
+      empath: {
+        name: "The Empath",
+        strategy: "rescue",
+        anxiety: 5, avoidance: 1, meta: 3, empathy: 5, activation: 5, canSayNo: 1, canLeave: 1,
+        wound: "Other people's pain is my responsibility - I must heal everyone",
+        fear: "Someone suffering because I didn't help",
+        light: "Emotionally attuned person with healthy boundaries (when not absorbing everyone's pain)"
+      },
+      fortress: {
+        name: "The Fortress",
+        strategy: "withdrawal",
+        anxiety: 2, avoidance: 5, meta: 4, empathy: 2, activation: 1, canSayNo: 5, canLeave: 5,
+        wound: "Vulnerability equals annihilation - I must stay protected",
+        fear: "Being overwhelmed or consumed by intimacy",
+        light: "Self-protective person who can also open up (when not trapped in isolation)"
+      },
+      performer: {
+        name: "The Performer",
+        strategy: "performance",
+        anxiety: 4, avoidance: 2, meta: 3, empathy: 3, activation: 3, canSayNo: 2, canLeave: 2,
+        wound: "I'll be forgotten if I'm not special - I must perform",
+        fear: "Being ordinary and discarded",
+        light: "Charismatic person who can be authentic (when not performing for approval)"
+      },
+      queen: {
+        name: "The Queen/King",
+        strategy: "power",
+        anxiety: 3, avoidance: 4, meta: 4, empathy: 2, activation: 3, canSayNo: 5, canLeave: 4,
+        wound: "I must be in control or I'll be hurt",
+        fear: "Being powerless or at someone's mercy",
+        light: "Natural leader who can also collaborate (when not controlling from fear)"
+      },
+      ghost: {
+        name: "The Ghost",
+        strategy: "withdrawal",
+        anxiety: 4, avoidance: 4, meta: 3, empathy: 3, activation: 2, canSayNo: 3, canLeave: 5,
+        wound: "I'm too much - I must disappear",
+        fear: "Overwhelming others with my presence",
+        light: "Gentle presence who can also be seen (when not hiding in shame)"
+      },
+      saint: {
+        name: "The Saint",
+        strategy: "rescue",
+        anxiety: 4, avoidance: 1, meta: 2, empathy: 5, activation: 4, canSayNo: 1, canLeave: 1,
+        wound: "Love means complete selflessness - I must never want",
+        fear: "Having needs makes me unworthy of love",
+        light: "Caring person who can also have needs (when not denying self for approval)"
+      },
+      scholar: {
+        name: "The Scholar",
+        strategy: "analysis",
+        anxiety: 3, avoidance: 3, meta: 5, empathy: 2, activation: 2, canSayNo: 4, canLeave: 3,
+        wound: "Understanding protects me - I must know everything",
+        fear: "Being caught off-guard or ignorant",
+        light: "Insightful person who can tolerate uncertainty (when not hiding in intellect)"
+      },
+      victim: {
+        name: "The Victim",
+        strategy: "rescue",
+        anxiety: 5, avoidance: 2, meta: 2, empathy: 4, activation: 5, canSayNo: 1, canLeave: 1,
+        wound: "I'm powerless and everyone will hurt me",
+        fear: "Being abandoned or harmed again",
+        light: "Survivor who has reclaimed power (when no longer identified with helplessness)"
+      },
+      provocateur: {
+        name: "The Provocateur",
+        strategy: "power",
+        anxiety: 3, avoidance: 4, meta: 4, empathy: 2, activation: 4, canSayNo: 5, canLeave: 3,
+        wound: "I must be loud or I'll disappear",
+        fear: "Being invisible or ignored",
+        light: "Bold presence who can also listen (when not fighting for attention)"
+      },
+      minimizer: {
+        name: "The Minimizer",
+        strategy: "withdrawal",
+        anxiety: 4, avoidance: 3, meta: 3, empathy: 3, activation: 2, canSayNo: 2, canLeave: 3,
+        wound: "I don't deserve better - I must accept less",
+        fear: "Wanting more makes me ungrateful",
+        light: "Humble person who can also advocate for self (when not shrinking in unworthiness)"
+      }
+    };
 
     const QUESTIONS = [
-      // Performer
-      { type: "performer", text: "I can feel what someone wants from me and become it without thinking." },
-      { type: "performer", text: "I worry that if I show the real me, I will lose them." },
-      { type: "performer", text: "I edit my needs in real time to keep the connection smooth." },
-      { type: "performer", text: "I feel more confident in who I am when someone is pleased with me." },
-      { type: "performer", text: "I can be magnetic and charming even when I feel empty or stressed inside." },
-      { type: "performer", text: "After conflict, my first instinct is to repair the vibe even if my feelings are unresolved." },
-
-      // Analyzer
-      { type: "analyzer", text: "I stay calm by thinking, researching, or breaking everything down." },
-      { type: "analyzer", text: "I get stuck in loops because I need the missing piece to feel safe." },
-      { type: "analyzer", text: "I would rather understand the truth than be comforted." },
-      { type: "analyzer", text: "I struggle to trust my feelings unless I can explain them logically." },
-      { type: "analyzer", text: "I notice patterns other people miss and it makes relationships feel heavy." },
-      { type: "analyzer", text: "When someone is unclear, my mind works overtime to figure out why." },
-
-      // Fixer
-      { type: "fixer", text: "I take responsibility for other people’s emotions without being asked." },
-      { type: "fixer", text: "I believe love means effort, patience, and helping them grow." },
-      { type: "fixer", text: "I stay longer than I should because I see their potential." },
-      { type: "fixer", text: "I can feel guilty for having needs that inconvenience someone." },
-      { type: "fixer", text: "I attract people who need support, guidance, or saving." },
-      { type: "fixer", text: "I confuse loyalty with self abandonment sometimes." },
-
-      // Vanisher
-      { type: "vanisher", text: "When things get intense, my instinct is to pull back and go quiet." },
-      { type: "vanisher", text: "I feel safest when nobody expects anything from me emotionally." },
-      { type: "vanisher", text: "I can care deeply and still struggle to be reachable consistently." },
-      { type: "vanisher", text: "I avoid conflict because it feels like a trap or a loss of control." },
-      { type: "vanisher", text: "I disappear to regulate, then come back when I feel stable again." },
-      { type: "vanisher", text: "I worry I will be swallowed up if I fully commit." },
+      { section: "part1", text: "When conflict arises in relationships, I tend to:", answers: [{ text: "Panic and do anything to fix it immediately", score: {anxiety:5, avoidance:1, meta:2} },{ text: "Shut down emotionally and create distance", score: {anxiety:2, avoidance:5, meta:4} },{ text: "Try to smooth things over and keep the peace", score: {anxiety:4, avoidance:1, meta:3} },{ text: "Analyze what went wrong logically", score: {anxiety:3, avoidance:3, meta:4} }]},
+      { section: "part1", text: "When I feel vulnerable or exposed, I:", answers: [{ text: "Get defensive and assert control", score: {empathy:1, meta:4, strategy:"power"} },{ text: "Focus on helping others instead", score: {empathy:4, meta:1, strategy:"rescue"} },{ text: "Put on a performance or mask", score: {empathy:1, meta:2, strategy:"performance"} },{ text: "Retreat and isolate myself", score: {empathy:3, meta:3, strategy:"withdrawal"} }]},
+      { section: "part1", text: "My biggest fear in relationships is:", answers: [{ text: "Being abandoned or rejected", score: {anxiety:5, avoidance:1} },{ text: "Being trapped or controlled", score: {anxiety:2, avoidance:5} },{ text: "Being powerless or hurt", score: {anxiety:5, avoidance:4} },{ text: "Not being good enough", score: {anxiety:4, avoidance:2} }]},
+      { section: "part1", text: "When someone needs me, I:", answers: [{ text: "Drop everything to help them", score: {empathy:5, canSayNo:1, strategy:"rescue"} },{ text: "Assess if it's worth my time", score: {empathy:1, canSayNo:5, strategy:"power"} },{ text: "Try to problem-solve for them", score: {empathy:3, canSayNo:3, strategy:"analysis"} },{ text: "Feel uncomfortable and want to escape", score: {empathy:2, canSayNo:4, strategy:"withdrawal"} }]},
+      { section: "part1", text: "When I'm stressed, my nervous system:", answers: [{ text: "Goes into complete survival mode, I'm flooded", score: {activation:5} },{ text: "Gets very reactive and hypervigilant", score: {activation:4} },{ text: "Stays engaged but I can feel the tension", score: {activation:3} },{ text: "Shuts down completely, I go numb", score: {activation:1} }]},
+      { section: "part1", text: "In groups, I typically:", answers: [{ text: "Notice patterns and connections others miss", score: {meta:5, empathy:3, strategy:"analysis"} },{ text: "Translate between people who aren't understanding each other", score: {meta:4, empathy:4, strategy:"performance"} },{ text: "Make sure everyone feels included", score: {meta:2, empathy:5, strategy:"rescue"} },{ text: "Feel overwhelmed and want to leave", score: {meta:1, empathy:1, strategy:"withdrawal"} }]},
+      { section: "part1", text: "People would describe me as:", answers: [{ text: "Charming and adaptable", score: {strategy:"performance", empathy:4} },{ text: "Strong and intimidating", score: {strategy:"power", empathy:1} },{ text: "Selfless and giving", score: {strategy:"rescue", empathy:5} },{ text: "Logical and analytical", score: {strategy:"analysis", empathy:2} }]},
+      { section: "part1", text: "My approach to boundaries is:", answers: [{ text: "I struggle to set any boundaries at all", score: {canSayNo:1, canLeave:1} },{ text: "I have strong walls, people can't get close", score: {canSayNo:5, canLeave:5} },{ text: "I can't say no but I'll leave when I need to", score: {canSayNo:1, canLeave:4} },{ text: "I can say no but I feel trapped in relationships", score: {canSayNo:5, canLeave:2} }]},
+      { section: "part2", text: "I feel COMPELLED to:", answers: [{ text: "Fix miscommunications between people even when no one asked", wound: {translator:5, patternrecognizer:4, hero:3} },{ text: "Put others' needs before mine, always", wound: {martyr:5, saint:5, caretaker:5} },{ text: "Adapt to what people want so they'll accept me", wound: {chameleon:5, performer:4, diplomat:4} },{ text: "Get everything exactly right or I've failed", wound: {perfectionist:5, scholar:4, sage:3} },{ text: "Actually, I don't feel compelled to do things I don't want to do", wound: {} }]},
+      { section: "part2", text: "I can't stop doing this even though it exhausts me:", answers: [{ text: "Absorbing everyone's emotions and trying to heal them", wound: {empath:5, caretaker:5, saint:4} },{ text: "Rescuing people from their problems", wound: {hero:5, savior:5, martyr:4} },{ text: "Being the bridge between people who can't understand each other", wound: {translator:5, diplomat:4} },{ text: "Controlling situations so nothing goes wrong", wound: {general:4, queen:5, critic:4} },{ text: "Nothing - I can stop when I'm tired", wound: {} }]},
+      { section: "part2", text: "If I stopped doing this, I fear:", answers: [{ text: "People would reject me for being \"too much\" or selfish", wound: {martyr:5, minimizer:5, saint:4} },{ text: "I'd be worthless if I'm not useful", wound: {hero:5, savior:4, caretaker:5} },{ text: "Everything would fall apart without me pointing it out", wound: {translator:5, patternrecognizer:4} },{ text: "I'd disappear if people saw the real me", wound: {chameleon:5, performer:5} },{ text: "I don't have this kind of fear", wound: {} }]},
+      { section: "part2", text: "When I try to stop my pattern, I feel:", answers: [{ text: "Overwhelming panic and fear", wound: {victim:5, empath:5, ghost:4} },{ text: "Crushing guilt, like I'm being selfish", wound: {martyr:5, saint:5, caretaker:4} },{ text: "Like I'm losing my identity", wound: {chameleon:4, shapeshifter:5} },{ text: "Terrified I'll be exposed as flawed", wound: {perfectionist:5, judge:5} },{ text: "I don't feel panic when I change my behavior", wound: {} }]},
+      { section: "part2", text: "I can't leave situations even when I should because:", answers: [{ text: "They need me, I can't abandon them", wound: {victim:5, empath:4, caretaker:5} },{ text: "I don't deserve better than this", wound: {martyr:5, minimizer:4} },{ text: "Actually, I leave easily - maybe too easily", wound: {stoic:4, fortress:5, observer:4} },{ text: "I get trapped by my own chaos", wound: {rebel:4, provocateur:5} },{ text: "I can leave when I need to", wound: {} }]},
+      { section: "part2", text: "The thought of being \"ordinary\" makes me feel:", answers: [{ text: "Terrified - I'll be discarded if I'm not special", wound: {queen:5, performer:5, provocateur:4} },{ text: "Actually relieved - I want to disappear", wound: {minimizer:5, ghost:4} },{ text: "Worthless - my value is being needed", wound: {hero:4, savior:4} },{ text: "Fine - I don't need to be special", wound: {} }]},
+      { section: "part3", text: "What exhausts me most is:", answers: [{ text: "Being the bridge between people constantly", wound: {translator:5, diplomat:4} },{ text: "Absorbing everyone's emotions", wound: {empath:5, caretaker:5} },{ text: "Performing different versions of myself", wound: {chameleon:5, performer:4} },{ text: "Seeing what's wrong and feeling responsible to fix it", wound: {patternrecognizer:5, scholar:4} },{ text: "I manage my energy pretty well", wound: {} }]},
+      { section: "part3", text: "I resent having to:", answers: [{ text: "Always be the one who explains things", wound: {translator:5, hero:4} },{ text: "Never ask for what I need", wound: {martyr:5, saint:5} },{ text: "Be responsible for keeping everything together", wound: {general:4, queen:5} },{ text: "Hide who I really am", wound: {chameleon:5, diplomat:4} },{ text: "I don't feel resentful about my role", wound: {} }]},
+      { section: "part3", text: "I'm exhausted by constantly:", answers: [{ text: "Monitoring myself for mistakes", wound: {perfectionist:5, judge:4} },{ text: "Fixing other people's problems", wound: {hero:5, savior:5} },{ text: "Fighting to be seen or heard", wound: {provocateur:5, rebel:4} },{ text: "Managing overwhelm by shutting down", wound: {ghost:5, observer:4, stoic:4} },{ text: "I'm not constantly exhausted", wound: {} }]},
+      { section: "part3", text: "When I think about what drains me, I feel:", answers: [{ text: "Hopeless - I can't stop even though it's killing me", wound: {martyr:5, victim:4, empath:5} },{ text: "Angry - why do I have to do this?", wound: {critic:4, judge:5, provocateur:4} },{ text: "Guilty for even wanting to stop", wound: {minimizer:5, ghost:4} },{ text: "Able to adjust when something doesn't work", wound: {} }]},
+      { section: "part3", text: "I'm tired of being:", answers: [{ text: "The only one who sees what's really happening", wound: {translator:5, patternrecognizer:4} },{ text: "The one everyone leans on but no one supports", wound: {caretaker:5, saint:5} },{ text: "Someone different for everyone", wound: {chameleon:5, shapeshifter:4} },{ text: "Alone because I can't let anyone close", wound: {untouchable:5, fortress:5} },{ text: "I like who I am in relationships", wound: {} }]},
+      { section: "part3", text: "My energy gets drained when:", answers: [{ text: "I'm around conflict or pain", wound: {empath:5, victim:4} },{ text: "I'm not getting attention or validation", wound: {performer:5, queen:4} },{ text: "People want me to feel instead of think", wound: {sage:4, scholar:5} },{ text: "People want emotional intimacy from me", wound: {lonewolf:5, observer:5} },{ text: "I have good energy boundaries", wound: {} }]},
+      { section: "part4", text: "Without this pattern, I would be:", answers: [{ text: "Unlovable and alone", wound: {martyr:5, minimizer:5, victim:5} },{ text: "Worthless and useless", wound: {hero:5, savior:5, caretaker:5} },{ text: "Invisible and forgotten", wound: {chameleon:5, performer:5} },{ text: "Ordinary and discardable", wound: {queen:5, critic:4} },{ text: "Still myself - my worth isn't tied to what I do", wound: {} }]},
+      { section: "part4", text: "I believe I'm only valuable when:", answers: [{ text: "I'm fixing or rescuing someone", wound: {hero:5, savior:5} },{ text: "I'm explaining or connecting things", wound: {translator:5, patternrecognizer:4} },{ text: "I'm completely selfless", wound: {saint:5, martyr:5} },{ text: "I'm flawless and never wrong", wound: {perfectionist:5, judge:5} },{ text: "I'm valuable just for existing", wound: {} }]},
+      { section: "part4", text: "The wound underneath my pattern is:", answers: [{ text: "My needs are too much/burdensome", wound: {martyr:5, minimizer:5} },{ text: "No one else sees what I see", wound: {translator:5, patternrecognizer:5} },{ text: "Other people's pain is my responsibility", wound: {empath:5, caretaker:5} },{ text: "Vulnerability equals annihilation", wound: {untouchable:5, fortress:5} },{ text: "I don't identify with having a wound like this", wound: {} }]},
+      { section: "part4", text: "If I stopped performing this role:", answers: [{ text: "I'd be consumed/overwhelmed", wound: {victim:5, ghost:5} },{ text: "I wouldn't know who I am", wound: {chameleon:5, shapeshifter:5} },{ text: "Everything would fall into chaos", wound: {general:5, queen:4} },{ text: "I'd disappear into the background", wound: {provocateur:5, rebel:4} },{ text: "I'd discover more of who I really am", wound: {} }]},
+      { section: "part4", text: "Deep down, I believe:", answers: [{ text: "I don't deserve better than this", wound: {victim:5, minimizer:5} },{ text: "People will hurt me if I need them", wound: {untouchable:5, lonewolf:5} },{ text: "Love means sacrificing myself completely", wound: {saint:5, martyr:5} },{ text: "Any flaw makes me worthless", wound: {perfectionist:5, judge:4} },{ text: "I deserve love and rest without earning it", wound: {} }]},
+      {
+        section: "part4",
+        text: "I'm afraid that if people knew the real me:",
+        answers: [
+          {
+            text: "They'd reject me",
+            wound: { chameleon: 5, diplomat: 5 }
+          },
+          {
+            text: "I'd be too much for them",
+            wound: { minimizer: 5, ghost: 4 }
+          },
+          {
+            text: "I'd be ordinary and they'd lose interest",
+            wound: { queen: 5, performer: 5 }
+          },
+          {
+            text: "They'd see me as weak or broken",
+            wound: { sage: 4, stoic: 5 }
+          },
+          {
+            text: "They'd probably like me more",
+            wound: {}
+          }
+        ]
+      },
+      {
+        section: "part4",
+        text: "When someone points out my pattern, I:",
+        answers: [
+          {
+            text: "Get defensive and explain why they're wrong",
+            wound: { critic: 5, judge: 5 }
+          },
+          {
+            text: "Feel ashamed and try harder to be perfect",
+            wound: { martyr: 5, saint: 5 }
+          },
+          {
+            text: "Shut down and push them away",
+            wound: { untouchable: 5, fortress: 5 }
+          },
+          {
+            text: "Get curious about what they're seeing",
+            wound: { scholar: 4, patternrecognizer: 5 }
+          },
+          {
+            text: "Feel grateful someone cares enough to say something",
+            wound: {}
+          }
+        ]
+      },
+      {
+        section: "part4",
+        text: "The idea of \"just being\" without doing/performing/managing:",
+        answers: [
+          {
+            text: "Terrifies me - who am I if I'm not useful?",
+            wound: { hero: 5, savior: 5, general: 5 }
+          },
+          {
+            text: "Makes me panic - I'll disappear",
+            wound: { performer: 5, chameleon: 5 }
+          },
+          {
+            text: "Sounds impossible - there's too much need",
+            wound: { victim: 5, empath: 5 }
+          },
+          {
+            text: "Is exactly what I want but can't access",
+            wound: { stoic: 5, fortress: 5 }
+          },
+          {
+            text: "Sounds peaceful and achievable",
+            wound: {}
+          }
+        ]
+      }
     ];
-
-    const BLEND_THRESHOLD = 3;
 
     function $(sel) { return document.querySelector(sel); }
 
@@ -211,145 +527,220 @@
     function renderQuestions() {
       const wrap = $("#questions");
       wrap.innerHTML = "";
+      let currentSection = null;
 
       QUESTIONS.forEach((q, idx) => {
+        if (q.section !== currentSection) {
+          currentSection = q.section;
+          const section = SECTIONS.find(s => s.id === currentSection);
+          if (section) {
+            const sectionHeader = document.createElement("div");
+            sectionHeader.className = "section-header";
+            sectionHeader.innerHTML = `${section.title}<div class="section-subtitle">${section.subtitle}</div>`;
+            wrap.appendChild(sectionHeader);
+          }
+        }
+
         const qId = `q_${idx}`;
         const block = document.createElement("div");
         block.className = "p-4 rounded-xl border border-white/10 bg-black/30";
 
         const title = document.createElement("div");
-        title.className = "font-medium";
-        title.innerHTML = `<span class="subtle">Q${idx + 1}.</span> ${q.text}`;
-
-        const row = document.createElement("div");
-        row.className = "mt-3 grid grid-cols-5 gap-2";
-
-        for (let v = 1; v <= 5; v++) {
-          const label = document.createElement("label");
-          label.className = "cursor-pointer select-none rounded-lg border border-white/10 bg-black/40 hover:bg-black/60 p-2 text-center";
-          label.innerHTML = `
-            <input class="mr-1" type="radio" name="${qId}" value="${v}" />
-            <span class="tiny">${v}</span>
-          `;
-          row.appendChild(label);
-        }
-
-        const meta = document.createElement("div");
-        meta.className = "mt-2 tiny";
-        meta.textContent = `Tracks: ${TYPES.find(t => t.key === q.type).label}`;
-
+        title.className = "font-medium mb-3";
+        title.innerHTML = `<div class="question-number">Question ${idx + 1} of ${totalQuestions}</div><span class="subtle">Q${idx + 1}.</span> ${q.text}`;
         block.appendChild(title);
-        block.appendChild(row);
-        block.appendChild(meta);
+
+        q.answers.forEach((answer, aIdx) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "answer-btn";
+          btn.textContent = answer.text;
+          btn.dataset.qid = qId;
+          btn.dataset.aidx = aIdx;
+          
+          btn.onclick = function() {
+            document.querySelectorAll(`button[data-qid="${qId}"]`).forEach(b => b.classList.remove("selected"));
+            btn.classList.add("selected");
+          };
+          
+          block.appendChild(btn);
+        });
+
         wrap.appendChild(block);
       });
     }
 
-    function computeScores(formEl) {
-      const scores = { performer: 0, analyzer: 0, fixer: 0, vanisher: 0 };
+    function calculateResults() {
+      const quizScores = {
+        anxiety: 0, avoidance: 0, meta: 0, empathy: 0,
+        activation: 0, canSayNo: 0, canLeave: 0
+      };
+      const strategyCount = {};
+      const woundScores = {};
+
+      // Initialize wound scores for all mask keys
+      Object.keys(masks).forEach(key => woundScores[key] = 0);
+
+      // Count dimensions for averaging
+      const dimensionCounts = {
+        anxiety: 0, avoidance: 0, meta: 0, empathy: 0,
+        activation: 0, canSayNo: 0, canLeave: 0
+      };
 
       QUESTIONS.forEach((q, idx) => {
-        const name = `q_${idx}`;
-        const v = formEl.querySelector(`input[name="${name}"]:checked`);
-        if (!v) throw new Error(`Missing answer for question ${idx + 1}`);
-        const num = Number(v.value);
-        scores[q.type] += num;
+        const qId = `q_${idx}`;
+        const selectedBtn = document.querySelector(`button[data-qid="${qId}"].selected`);
+        
+        if (!selectedBtn) {
+          throw new Error(`Please answer question ${idx + 1}`);
+        }
+
+        const answerIdx = parseInt(selectedBtn.dataset.aidx);
+        const answer = q.answers[answerIdx];
+
+        // Process behavior scores
+        if (answer.score) {
+          Object.entries(answer.score).forEach(([key, val]) => {
+            if (key === "strategy") {
+              strategyCount[val] = (strategyCount[val] || 0) + 1;
+            } else if (typeof val === "number") {
+              quizScores[key] = (quizScores[key] || 0) + val;
+              dimensionCounts[key]++;
+            }
+          });
+        }
+
+        // Process wound scores
+        if (answer.wound) {
+          Object.entries(answer.wound).forEach(([maskKey, val]) => {
+            woundScores[maskKey] = (woundScores[maskKey] || 0) + val;
+          });
+        }
       });
 
-      const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
-      const [primaryKey, primaryScore] = sorted[0];
-      const [secondaryKey, secondaryScore] = sorted[1];
+      // Calculate behavior averages
+      const avgAnxiety = dimensionCounts.anxiety > 0 ? Math.round(quizScores.anxiety / dimensionCounts.anxiety) : 3;
+      const avgAvoidance = dimensionCounts.avoidance > 0 ? Math.round(quizScores.avoidance / dimensionCounts.avoidance) : 3;
+      const avgMeta = dimensionCounts.meta > 0 ? Math.round(quizScores.meta / dimensionCounts.meta) : 3;
+      const avgEmpathy = dimensionCounts.empathy > 0 ? Math.round(quizScores.empathy / dimensionCounts.empathy) : 3;
+      const avgActivation = dimensionCounts.activation > 0 ? Math.round(quizScores.activation / dimensionCounts.activation) : 3;
+      const avgCanSayNo = dimensionCounts.canSayNo > 0 ? Math.round(quizScores.canSayNo / dimensionCounts.canSayNo) : 3;
+      const avgCanLeave = dimensionCounts.canLeave > 0 ? Math.round(quizScores.canLeave / dimensionCounts.canLeave) : 3;
 
-      const blend = (primaryScore - secondaryScore) <= BLEND_THRESHOLD;
-
-      return {
-        scores,
-        primary: primaryKey,
-        secondary: secondaryKey,
-        blend,
-        primaryScore,
-        secondaryScore
-      };
-    }
-
-    function resultCopy(primaryKey) {
-      const map = {
-        performer: {
-          title: "The Performer",
-          subtitle: "Emotional Shapeshifter",
-          line: "You keep connection stable by managing the room. You adapt fast, repair fast, and can accidentally make your needs disappear."
-        },
-        analyzer: {
-          title: "The Analyzer",
-          subtitle: "Pattern Scanner",
-          line: "You survive by understanding. When things get unclear, your mind works overtime to find the missing piece."
-        },
-        fixer: {
-          title: "The Fixer",
-          subtitle: "Rescuer Engine",
-          line: "You love through effort. You carry weight, anticipate needs, and can over-function until resentment builds."
-        },
-        vanisher: {
-          title: "The Vanisher",
-          subtitle: "Disappear to Regulate",
-          line: "Intensity triggers overload. You regulate with distance, then reappear when you feel stable again."
+      // Find top strategy
+      let topStrategy = 'performance';
+      let maxCount = 0;
+      Object.entries(strategyCount).forEach(([strategy, count]) => {
+        if (count > maxCount) {
+          maxCount = count;
+          topStrategy = strategy;
         }
-      };
-      return map[primaryKey];
+      });
+
+      // Score each mask
+      const ranked = Object.entries(masks).map(([key, mask]) => {
+        const behaviorDistance =
+          Math.abs(mask.anxiety - avgAnxiety) * 2 +
+          Math.abs(mask.avoidance - avgAvoidance) * 1.5 +
+          Math.abs(mask.meta - avgMeta) * 2 +
+          Math.abs(mask.empathy - avgEmpathy) * 2 +
+          Math.abs(mask.activation - avgActivation) * 1 +
+          Math.abs(mask.canSayNo - avgCanSayNo) * 1.5 +
+          Math.abs(mask.canLeave - avgCanLeave) * 1.5 +
+          (mask.strategy === topStrategy ? 0 : 3);
+
+        const woundScore = woundScores[key];
+        const woundMultiplier = woundScore < 10 ? 10 : 1;
+        const finalScore = behaviorDistance * woundMultiplier - (woundScore * 0.5);
+
+        return { key, mask, behaviorDistance, woundScore, finalScore };
+      })
+      .filter(item => item.woundScore >= 15)
+      .sort((a, b) => a.finalScore - b.finalScore);
+
+      const top3 = ranked.slice(0, 3);
+      
+      if (top3.length === 0) {
+        showNoMasksResult();
+      } else {
+        showResults(top3);
+      }
     }
 
-    function renderResult(scored, tracking) {
+    function showNoMasksResult() {
       const res = $("#result");
-      const copy = resultCopy(scored.primary);
-
-      const scoreLine = TYPES.map(t => `${t.label}: ${scored.scores[t.key]}`).join(" • ");
-
       res.innerHTML = `
-        <div class="text-xs tracking-widest uppercase subtle">Your result</div>
-        <h2 class="text-3xl font-semibold mt-2">${copy.title}</h2>
-        <div class="subtle mt-1">${copy.subtitle}</div>
-
-        <div class="mt-4 p-4 rounded-xl border border-white/10 bg-black/30">
-          <div class="tiny">${scoreLine}</div>
-        </div>
-
-        <div class="mt-5 subtle">${copy.line}</div>
-
-        <div class="mt-5 p-4 rounded-xl border border-white/10 bg-black/30">
-          <div class="font-semibold">Secondary mask</div>
-          <div class="subtle mt-1">
-            ${scored.blend ? "Blend: your top two types are close." : "Secondary shows up under stress."}
-            Secondary type: <span class="text-white">${scored.secondary}</span>
+        <div class="no-masks-message">
+          <div class="no-masks-title">No Active Masks Detected</div>
+          <div class="no-masks-text">
+            <p style="margin-bottom: 15px;">You don't appear to be operating from wounded defensive patterns right now.</p>
+            <p style="margin-bottom: 15px;">You might have <strong>skills and capacities</strong> (like translating, pattern recognition, empathy) without being trapped in compulsive patterns driven by fear or exhaustion.</p>
+            <p>This means you're able to choose when to use these abilities rather than being imprisoned by them. That's integration, not defensiveness.</p>
           </div>
-        </div>
-
-        <div class="mt-5 tiny">
-          Tracking: ${tracking.relationship_status || "n/a"} • ${tracking.biggest_problem || "n/a"} • ${tracking.conflict_move || "n/a"}
         </div>
       `;
       res.classList.remove("hidden");
       res.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
-    function buildPayload(scored, tracking) {
+    function showResults(top3) {
+      const res = $("#result");
+      
+      const cards = top3.map((item, idx) => {
+        const mask = item.mask;
+        const color = strategyColors[mask.strategy] || '#d4af37';
+        
+        return `
+          <div class="result-card">
+            <div class="result-rank">Match ${idx + 1}</div>
+            <div class="result-mask-name" style="color:${color}">${mask.name}</div>
+            
+            <div class="wound-indicator">
+              <div class="wound-label">⚠️ Active Wound Detected</div>
+              <div style="color: #e8d4b8; margin-top: 8px;">Woundedness Score: ${item.woundScore}/100</div>
+            </div>
+
+            <div class="result-detail">
+              <span class="result-label">Core Wound:</span> ${mask.wound}
+            </div>
+            <div class="result-detail">
+              <span class="result-label">Driving Fear:</span> ${mask.fear}
+            </div>
+            <div class="result-detail">
+              <span class="result-label">What You're Doing:</span> Operating from compulsion and fear rather than choice
+            </div>
+            <div class="result-detail">
+              <span class="result-label">Light Version (Integrated):</span> ${mask.light}
+            </div>
+            <div class="result-detail">
+              <span class="result-label">Defense Strategy:</span> ${mask.strategy.toUpperCase()}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      res.innerHTML = `
+        <div style="text-align: center; margin-bottom: 25px; color: #b8a084; font-size: 1.1rem; line-height: 1.6;">
+          These are the patterns <strong>draining you</strong> - not just behaviors you have, but compulsive roles you can't stop playing even when exhausted.
+        </div>
+        <div class="result-grid">${cards}</div>
+      `;
+      
+      res.classList.remove("hidden");
+      res.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function buildPayload(tracking) {
       const now = new Date();
       const submission_id = (crypto?.randomUUID?.() || String(Math.random()).slice(2)) + "_" + now.getTime();
-
-      // IMPORTANT: source comes from the URL like ?source=fb_reel_1
       const source = new URLSearchParams(window.location.search).get("source") || "direct";
 
       return {
         submission_id,
         timestamp_iso: now.toISOString(),
         source,
-
-        scores: scored.scores,
-        primary_type: scored.primary,
-        secondary_type: scored.secondary,
-        blend_flag: scored.blend ? "yes" : "no",
-
         tracking,
-        version: "maskset_v1"
+        version: "maskset_v2_28q"
       };
     }
 
@@ -392,11 +783,10 @@
           age_range: formEl.age_range.value || ""
         };
 
-        const scored = computeScores(formEl);
-        renderResult(scored, tracking);
+        calculateResults();
 
         btn.textContent = "Saving...";
-        const payload = buildPayload(scored, tracking);
+        const payload = buildPayload(tracking);
 
         await postToWebhook(payload);
         showStatus("Saved. Now you can measure type distribution and what content pulled them in.", false);
@@ -411,4 +801,3 @@
   </script>
 </body>
 </html>
-
