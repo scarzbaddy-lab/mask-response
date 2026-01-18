@@ -47,7 +47,83 @@
       color: white;
       font-weight: 500;
     }
+    .question-number {
+      color: #d4af37;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+      text-align: center;
+      font-family: 'Cinzel', serif;
+    }
+    .wound-indicator {
+      background: rgba(220, 20, 60, 0.2);
+      border-left: 3px solid #dc143c;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 5px;
+    }
+    .wound-label {
+      color: #dc143c;
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+    }
+    .no-masks-message {
+      text-align: center;
+      padding: 40px;
+      background: rgba(50, 205, 50, 0.1);
+      border: 2px solid rgba(50, 205, 50, 0.3);
+      border-radius: 10px;
+      margin: 30px 0;
+    }
+    .no-masks-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.8rem;
+      color: #32cd32;
+      margin-bottom: 15px;
+    }
+    .no-masks-text {
+      font-size: 1.2rem;
+      color: #b8a084;
+      line-height: 1.6;
+    }
+    .result-card {
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .result-rank {
+      color: #d4af37;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .result-mask-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+    .result-detail {
+      margin: 10px 0;
+      color: rgba(255,255,255,0.78);
+      line-height: 1.6;
+    }
+    .result-label {
+      font-weight: 600;
+      color: #d4af37;
+    }
+    .result-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
   </style>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body class="min-h-screen bg-black text-white">
@@ -186,6 +262,7 @@
 
   <script>
     const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzceOf9UGdAiJbHjSoQqZewdFqm_SZoM80AQKAMkGZqpn5CiVD1yDRwqWELRewdQ9fVDw/exec";
+    const totalQuestions = 28;
 
     const SECTIONS = [
       { id: "part1", title: "Part 1: What You Do", subtitle: "How you typically behave in relationships and conflicts" },
@@ -193,6 +270,138 @@
       { id: "part3", title: "Part 3: What Drains You", subtitle: "Where your energy goes and what you resent" },
       { id: "part4", title: "Part 4: Who You Are Without It", subtitle: "What you believe about yourself and your worth" }
     ];
+
+    const strategyColors = {
+      power: '#b8860b',
+      rescue: '#cd853f',
+      performance: '#daa520',
+      withdrawal: '#8b7355',
+      analysis: '#9370db'
+    };
+
+    // Masks database - comprehensive profiles for matching
+    const masks = {
+      translator: {
+        name: "The Translator",
+        strategy: "performance",
+        anxiety: 4, avoidance: 2, meta: 5, empathy: 4, activation: 3, canSayNo: 2, canLeave: 3,
+        wound: "No one else sees what I see - I must bridge the gap",
+        fear: "Communication will break down without me",
+        light: "Skilled communicator who helps people understand each other (when chosen, not compelled)"
+      },
+      martyr: {
+        name: "The Martyr",
+        strategy: "rescue",
+        anxiety: 5, avoidance: 1, meta: 2, empathy: 5, activation: 4, canSayNo: 1, canLeave: 1,
+        wound: "My needs are burdensome - I must sacrifice myself",
+        fear: "Being seen as selfish or too much",
+        light: "Generous person who can also receive (when not driven by fear of rejection)"
+      },
+      chameleon: {
+        name: "The Chameleon",
+        strategy: "performance",
+        anxiety: 5, avoidance: 2, meta: 3, empathy: 3, activation: 4, canSayNo: 1, canLeave: 2,
+        wound: "The real me will be rejected - I must adapt",
+        fear: "Being seen and rejected for who I really am",
+        light: "Socially adaptive person with authentic core (when not hiding in fear)"
+      },
+      hero: {
+        name: "The Hero",
+        strategy: "rescue",
+        anxiety: 4, avoidance: 2, meta: 3, empathy: 4, activation: 4, canSayNo: 2, canLeave: 2,
+        wound: "I'm only valuable if I'm useful - I must save others",
+        fear: "Being worthless if not rescuing",
+        light: "Helpful person who can also rest (when not proving worth through exhaustion)"
+      },
+      perfectionist: {
+        name: "The Perfectionist",
+        strategy: "analysis",
+        anxiety: 4, avoidance: 3, meta: 5, empathy: 2, activation: 4, canSayNo: 4, canLeave: 3,
+        wound: "Any flaw makes me worthless - I must be flawless",
+        fear: "Being exposed as imperfect and discarded",
+        light: "Excellence-oriented person who can tolerate imperfection (when not driven by shame)"
+      },
+      empath: {
+        name: "The Empath",
+        strategy: "rescue",
+        anxiety: 5, avoidance: 1, meta: 3, empathy: 5, activation: 5, canSayNo: 1, canLeave: 1,
+        wound: "Other people's pain is my responsibility - I must heal everyone",
+        fear: "Someone suffering because I didn't help",
+        light: "Emotionally attuned person with healthy boundaries (when not absorbing everyone's pain)"
+      },
+      fortress: {
+        name: "The Fortress",
+        strategy: "withdrawal",
+        anxiety: 2, avoidance: 5, meta: 4, empathy: 2, activation: 1, canSayNo: 5, canLeave: 5,
+        wound: "Vulnerability equals annihilation - I must stay protected",
+        fear: "Being overwhelmed or consumed by intimacy",
+        light: "Self-protective person who can also open up (when not trapped in isolation)"
+      },
+      performer: {
+        name: "The Performer",
+        strategy: "performance",
+        anxiety: 4, avoidance: 2, meta: 3, empathy: 3, activation: 3, canSayNo: 2, canLeave: 2,
+        wound: "I'll be forgotten if I'm not special - I must perform",
+        fear: "Being ordinary and discarded",
+        light: "Charismatic person who can be authentic (when not performing for approval)"
+      },
+      queen: {
+        name: "The Queen/King",
+        strategy: "power",
+        anxiety: 3, avoidance: 4, meta: 4, empathy: 2, activation: 3, canSayNo: 5, canLeave: 4,
+        wound: "I must be in control or I'll be hurt",
+        fear: "Being powerless or at someone's mercy",
+        light: "Natural leader who can also collaborate (when not controlling from fear)"
+      },
+      ghost: {
+        name: "The Ghost",
+        strategy: "withdrawal",
+        anxiety: 4, avoidance: 4, meta: 3, empathy: 3, activation: 2, canSayNo: 3, canLeave: 5,
+        wound: "I'm too much - I must disappear",
+        fear: "Overwhelming others with my presence",
+        light: "Gentle presence who can also be seen (when not hiding in shame)"
+      },
+      saint: {
+        name: "The Saint",
+        strategy: "rescue",
+        anxiety: 4, avoidance: 1, meta: 2, empathy: 5, activation: 4, canSayNo: 1, canLeave: 1,
+        wound: "Love means complete selflessness - I must never want",
+        fear: "Having needs makes me unworthy of love",
+        light: "Caring person who can also have needs (when not denying self for approval)"
+      },
+      scholar: {
+        name: "The Scholar",
+        strategy: "analysis",
+        anxiety: 3, avoidance: 3, meta: 5, empathy: 2, activation: 2, canSayNo: 4, canLeave: 3,
+        wound: "Understanding protects me - I must know everything",
+        fear: "Being caught off-guard or ignorant",
+        light: "Insightful person who can tolerate uncertainty (when not hiding in intellect)"
+      },
+      victim: {
+        name: "The Victim",
+        strategy: "rescue",
+        anxiety: 5, avoidance: 2, meta: 2, empathy: 4, activation: 5, canSayNo: 1, canLeave: 1,
+        wound: "I'm powerless and everyone will hurt me",
+        fear: "Being abandoned or harmed again",
+        light: "Survivor who has reclaimed power (when no longer identified with helplessness)"
+      },
+      provocateur: {
+        name: "The Provocateur",
+        strategy: "power",
+        anxiety: 3, avoidance: 4, meta: 4, empathy: 2, activation: 4, canSayNo: 5, canLeave: 3,
+        wound: "I must be loud or I'll disappear",
+        fear: "Being invisible or ignored",
+        light: "Bold presence who can also listen (when not fighting for attention)"
+      },
+      minimizer: {
+        name: "The Minimizer",
+        strategy: "withdrawal",
+        anxiety: 4, avoidance: 3, meta: 3, empathy: 3, activation: 2, canSayNo: 2, canLeave: 3,
+        wound: "I don't deserve better - I must accept less",
+        fear: "Wanting more makes me ungrateful",
+        light: "Humble person who can also advocate for self (when not shrinking in unworthiness)"
+      }
+    };
 
     const QUESTIONS = [
       { section: "part1", text: "When conflict arises in relationships, I tend to:", answers: [{ text: "Panic and do anything to fix it immediately", score: {anxiety:5, avoidance:1, meta:2} },{ text: "Shut down emotionally and create distance", score: {anxiety:2, avoidance:5, meta:4} },{ text: "Try to smooth things over and keep the peace", score: {anxiety:4, avoidance:1, meta:3} },{ text: "Analyze what went wrong logically", score: {anxiety:3, avoidance:3, meta:4} }]},
@@ -249,10 +458,12 @@
         if (q.section !== currentSection) {
           currentSection = q.section;
           const section = SECTIONS.find(s => s.id === currentSection);
-          const sectionHeader = document.createElement("div");
-          sectionHeader.className = "section-header";
-          sectionHeader.innerHTML = `${section.title}<div class="section-subtitle">${section.subtitle}</div>`;
-          wrap.appendChild(sectionHeader);
+          if (section) {
+            const sectionHeader = document.createElement("div");
+            sectionHeader.className = "section-header";
+            sectionHeader.innerHTML = `${section.title}<div class="section-subtitle">${section.subtitle}</div>`;
+            wrap.appendChild(sectionHeader);
+          }
         }
 
         const qId = `q_${idx}`;
@@ -261,7 +472,7 @@
 
         const title = document.createElement("div");
         title.className = "font-medium mb-3";
-        title.innerHTML = `<span class="subtle">Q${idx + 1}.</span> ${q.text}`;
+        title.innerHTML = `<div class="question-number">Question ${idx + 1} of ${totalQuestions}</div><span class="subtle">Q${idx + 1}.</span> ${q.text}`;
         block.appendChild(title);
 
         q.answers.forEach((answer, aIdx) => {
@@ -284,88 +495,167 @@
       });
     }
 
-    function computeScores(formEl) {
-      const scores = {
-        anxiety: 0, avoidance: 0, meta: 0, empathy: 0, 
-        canSayNo: 0, canLeave: 0, activation: 0
+    function calculateResults() {
+      const quizScores = {
+        anxiety: 0, avoidance: 0, meta: 0, empathy: 0,
+        activation: 0, canSayNo: 0, canLeave: 0
       };
-      const strategies = {};
-      const wounds = {};
+      const strategyCount = {};
+      const woundScores = {};
+
+      // Initialize wound scores for all mask keys
+      Object.keys(masks).forEach(key => woundScores[key] = 0);
+
+      // Count dimensions for averaging
+      const dimensionCounts = {
+        anxiety: 0, avoidance: 0, meta: 0, empathy: 0,
+        activation: 0, canSayNo: 0, canLeave: 0
+      };
 
       QUESTIONS.forEach((q, idx) => {
         const qId = `q_${idx}`;
         const selectedBtn = document.querySelector(`button[data-qid="${qId}"].selected`);
         
         if (!selectedBtn) {
-          throw new Error(`Missing answer for question ${idx + 1}`);
+          throw new Error(`Please answer question ${idx + 1}`);
         }
 
         const answerIdx = parseInt(selectedBtn.dataset.aidx);
         const answer = q.answers[answerIdx];
 
+        // Process behavior scores
         if (answer.score) {
           Object.entries(answer.score).forEach(([key, val]) => {
             if (key === "strategy") {
-              strategies[val] = (strategies[val] || 0) + 1;
-            } else {
-              scores[key] = (scores[key] || 0) + val;
+              strategyCount[val] = (strategyCount[val] || 0) + 1;
+            } else if (typeof val === "number") {
+              quizScores[key] = (quizScores[key] || 0) + val;
+              dimensionCounts[key]++;
             }
           });
         }
 
+        // Process wound scores
         if (answer.wound) {
-          Object.entries(answer.wound).forEach(([key, val]) => {
-            wounds[key] = (wounds[key] || 0) + val;
+          Object.entries(answer.wound).forEach(([maskKey, val]) => {
+            woundScores[maskKey] = (woundScores[maskKey] || 0) + val;
           });
         }
       });
 
-      const topStrategy = Object.entries(strategies).sort((a, b) => b[1] - a[1])[0];
-      const topWounds = Object.entries(wounds).sort((a, b) => b[1] - a[1]).slice(0, 3);
+      // Calculate behavior averages
+      const avgAnxiety = dimensionCounts.anxiety > 0 ? Math.round(quizScores.anxiety / dimensionCounts.anxiety) : 3;
+      const avgAvoidance = dimensionCounts.avoidance > 0 ? Math.round(quizScores.avoidance / dimensionCounts.avoidance) : 3;
+      const avgMeta = dimensionCounts.meta > 0 ? Math.round(quizScores.meta / dimensionCounts.meta) : 3;
+      const avgEmpathy = dimensionCounts.empathy > 0 ? Math.round(quizScores.empathy / dimensionCounts.empathy) : 3;
+      const avgActivation = dimensionCounts.activation > 0 ? Math.round(quizScores.activation / dimensionCounts.activation) : 3;
+      const avgCanSayNo = dimensionCounts.canSayNo > 0 ? Math.round(quizScores.canSayNo / dimensionCounts.canSayNo) : 3;
+      const avgCanLeave = dimensionCounts.canLeave > 0 ? Math.round(quizScores.canLeave / dimensionCounts.canLeave) : 3;
 
-      return { scores, strategy: topStrategy?.[0] || "balanced", wounds: topWounds.map(w => w[0]) };
+      // Find top strategy
+      let topStrategy = 'performance';
+      let maxCount = 0;
+      Object.entries(strategyCount).forEach(([strategy, count]) => {
+        if (count > maxCount) {
+          maxCount = count;
+          topStrategy = strategy;
+        }
+      });
+
+      // Score each mask
+      const ranked = Object.entries(masks).map(([key, mask]) => {
+        const behaviorDistance =
+          Math.abs(mask.anxiety - avgAnxiety) * 2 +
+          Math.abs(mask.avoidance - avgAvoidance) * 1.5 +
+          Math.abs(mask.meta - avgMeta) * 2 +
+          Math.abs(mask.empathy - avgEmpathy) * 2 +
+          Math.abs(mask.activation - avgActivation) * 1 +
+          Math.abs(mask.canSayNo - avgCanSayNo) * 1.5 +
+          Math.abs(mask.canLeave - avgCanLeave) * 1.5 +
+          (mask.strategy === topStrategy ? 0 : 3);
+
+        const woundScore = woundScores[key];
+        const woundMultiplier = woundScore < 10 ? 10 : 1;
+        const finalScore = behaviorDistance * woundMultiplier - (woundScore * 0.5);
+
+        return { key, mask, behaviorDistance, woundScore, finalScore };
+      })
+      .filter(item => item.woundScore >= 15)
+      .sort((a, b) => a.finalScore - b.finalScore);
+
+      const top3 = ranked.slice(0, 3);
+      
+      if (top3.length === 0) {
+        showNoMasksResult();
+      } else {
+        showResults(top3);
+      }
     }
 
-    function renderResult(scored, tracking) {
+    function showNoMasksResult() {
+      const res = $("#result");
+      res.innerHTML = `
+        <div class="no-masks-message">
+          <div class="no-masks-title">No Active Masks Detected</div>
+          <div class="no-masks-text">
+            <p style="margin-bottom: 15px;">You don't appear to be operating from wounded defensive patterns right now.</p>
+            <p style="margin-bottom: 15px;">You might have <strong>skills and capacities</strong> (like translating, pattern recognition, empathy) without being trapped in compulsive patterns driven by fear or exhaustion.</p>
+            <p>This means you're able to choose when to use these abilities rather than being imprisoned by them. That's integration, not defensiveness.</p>
+          </div>
+        </div>
+      `;
+      res.classList.remove("hidden");
+      res.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function showResults(top3) {
       const res = $("#result");
       
-      const scoresDisplay = Object.entries(scored.scores)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join(" • ");
-      
-      const woundsDisplay = scored.wounds.length > 0 
-        ? scored.wounds.join(", ") 
-        : "No significant wound patterns detected";
+      const cards = top3.map((item, idx) => {
+        const mask = item.mask;
+        const color = strategyColors[mask.strategy] || '#d4af37';
+        
+        return `
+          <div class="result-card">
+            <div class="result-rank">Match ${idx + 1}</div>
+            <div class="result-mask-name" style="color:${color}">${mask.name}</div>
+            
+            <div class="wound-indicator">
+              <div class="wound-label">⚠️ Active Wound Detected</div>
+              <div style="color: #e8d4b8; margin-top: 8px;">Woundedness Score: ${item.woundScore}/100</div>
+            </div>
+
+            <div class="result-detail">
+              <span class="result-label">Core Wound:</span> ${mask.wound}
+            </div>
+            <div class="result-detail">
+              <span class="result-label">Driving Fear:</span> ${mask.fear}
+            </div>
+            <div class="result-detail">
+              <span class="result-label">What You're Doing:</span> Operating from compulsion and fear rather than choice
+            </div>
+            <div class="result-detail">
+              <span class="result-label">Light Version (Integrated):</span> ${mask.light}
+            </div>
+            <div class="result-detail">
+              <span class="result-label">Defense Strategy:</span> ${mask.strategy.toUpperCase()}
+            </div>
+          </div>
+        `;
+      }).join('');
 
       res.innerHTML = `
-        <div class="text-xs tracking-widest uppercase subtle">Your result</div>
-        <h2 class="text-3xl font-semibold mt-2">Your Mask Profile</h2>
-
-        <div class="mt-5 p-4 rounded-xl border border-white/10 bg-black/30">
-          <div class="font-semibold mb-2">Core Scores</div>
-          <div class="tiny">${scoresDisplay}</div>
+        <div style="text-align: center; margin-bottom: 25px; color: #b8a084; font-size: 1.1rem; line-height: 1.6;">
+          These are the patterns <strong>draining you</strong> - not just behaviors you have, but compulsive roles you can't stop playing even when exhausted.
         </div>
-
-        <div class="mt-5 p-4 rounded-xl border border-white/10 bg-black/30">
-          <div class="font-semibold mb-2">Primary Strategy</div>
-          <div class="subtle">${scored.strategy}</div>
-        </div>
-
-        <div class="mt-5 p-4 rounded-xl border border-white/10 bg-black/30">
-          <div class="font-semibold mb-2">Top Wound Patterns</div>
-          <div class="subtle">${woundsDisplay}</div>
-        </div>
-
-        <div class="mt-5 tiny">
-          Tracking: ${tracking.relationship_status || "n/a"} • ${tracking.biggest_problem || "n/a"} • ${tracking.conflict_move || "n/a"}
-        </div>
+        <div class="result-grid">${cards}</div>
       `;
       
       res.classList.remove("hidden");
       res.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
-    function buildPayload(scored, tracking) {
+    function buildPayload(tracking) {
       const now = new Date();
       const submission_id = (crypto?.randomUUID?.() || String(Math.random()).slice(2)) + "_" + now.getTime();
       const source = new URLSearchParams(window.location.search).get("source") || "direct";
@@ -374,9 +664,6 @@
         submission_id,
         timestamp_iso: now.toISOString(),
         source,
-        scores: scored.scores,
-        strategy: scored.strategy,
-        wounds: scored.wounds,
         tracking,
         version: "maskset_v2_28q"
       };
@@ -421,11 +708,10 @@
           age_range: formEl.age_range.value || ""
         };
 
-        const scored = computeScores(formEl);
-        renderResult(scored, tracking);
+        calculateResults();
 
         btn.textContent = "Saving...";
-        const payload = buildPayload(scored, tracking);
+        const payload = buildPayload(tracking);
 
         await postToWebhook(payload);
         showStatus("Saved. Now you can measure type distribution and what content pulled them in.", false);
