@@ -429,9 +429,84 @@
       { section: "part4", text: "The wound underneath my pattern is:", answers: [{ text: "My needs are too much/burdensome", wound: {martyr:5, minimizer:5} },{ text: "No one else sees what I see", wound: {translator:5, patternrecognizer:5} },{ text: "Other people's pain is my responsibility", wound: {empath:5, caretaker:5} },{ text: "Vulnerability equals annihilation", wound: {untouchable:5, fortress:5} },{ text: "I don't identify with having a wound like this", wound: {} }]},
       { section: "part4", text: "If I stopped performing this role:", answers: [{ text: "I'd be consumed/overwhelmed", wound: {victim:5, ghost:5} },{ text: "I wouldn't know who I am", wound: {chameleon:5, shapeshifter:5} },{ text: "Everything would fall into chaos", wound: {general:5, queen:4} },{ text: "I'd disappear into the background", wound: {provocateur:5, rebel:4} },{ text: "I'd discover more of who I really am", wound: {} }]},
       { section: "part4", text: "Deep down, I believe:", answers: [{ text: "I don't deserve better than this", wound: {victim:5, minimizer:5} },{ text: "People will hurt me if I need them", wound: {untouchable:5, lonewolf:5} },{ text: "Love means sacrificing myself completely", wound: {saint:5, martyr:5} },{ text: "Any flaw makes me worthless", wound: {perfectionist:5, judge:4} },{ text: "I deserve love and rest without earning it", wound: {} }]},
-      { section: "part4", text: "I'm afraid that if people knew the real me:", answers: [{ text: "They'd reject me", wound: {chameleon:5, diplomat:5} },{ text: "I'd be too much for them", wound: {minimizer:5, ghost:4} },{ text: "I'd be ordinary and they'd lose interest", wound: {queen:5, performer:5} },{ text: "They'd see me as weak or broken", wound: {sage:4, stoic:5} },{ text: "They'd probably like me more", wound: {} }]},
-      { section: "part4", text: "When someone points out my pattern, I:", answers: [{ text: "Get defensive and explain why they're wrong", wound: {critic:5, judge:5} },{ text: "Feel ashamed and try harder to be perfect", wound: {martyr:5, saint:5} },{ text: "Shut down and push them away", wound: {untouchable:5, fortress:5} },{ text: "Get curious about what they're seeing", wound: {scholar:4, patternrecognizer:5} },{ text: "Feel grateful someone cares enough to say something", wound: {} }]},
-      { section: "part4", text: "The idea of \"just being\" without doing/performing/managing:", answers: [{ text: "Terrifies me - who am I if I'm not useful?", wound: {hero:5, savior:5, general:5} },{ text: "Makes me panic - I'll disappear", wound: {performer:5, chameleon:5} },{ text: "Sounds impossible - there's too much need", wound: {victim:5, empath:5} },{ text: "Is exactly what I want but can't access", wound: {stoic:5, fortress:5} },{ text: "Sounds peaceful and achievable", wound: {} }]}
+      {
+        section: "part4",
+        text: "I'm afraid that if people knew the real me:",
+        answers: [
+          {
+            text: "They'd reject me",
+            wound: { chameleon: 5, diplomat: 5 }
+          },
+          {
+            text: "I'd be too much for them",
+            wound: { minimizer: 5, ghost: 4 }
+          },
+          {
+            text: "I'd be ordinary and they'd lose interest",
+            wound: { queen: 5, performer: 5 }
+          },
+          {
+            text: "They'd see me as weak or broken",
+            wound: { sage: 4, stoic: 5 }
+          },
+          {
+            text: "They'd probably like me more",
+            wound: {}
+          }
+        ]
+      },
+      {
+        section: "part4",
+        text: "When someone points out my pattern, I:",
+        answers: [
+          {
+            text: "Get defensive and explain why they're wrong",
+            wound: { critic: 5, judge: 5 }
+          },
+          {
+            text: "Feel ashamed and try harder to be perfect",
+            wound: { martyr: 5, saint: 5 }
+          },
+          {
+            text: "Shut down and push them away",
+            wound: { untouchable: 5, fortress: 5 }
+          },
+          {
+            text: "Get curious about what they're seeing",
+            wound: { scholar: 4, patternrecognizer: 5 }
+          },
+          {
+            text: "Feel grateful someone cares enough to say something",
+            wound: {}
+          }
+        ]
+      },
+      {
+        section: "part4",
+        text: "The idea of \"just being\" without doing/performing/managing:",
+        answers: [
+          {
+            text: "Terrifies me - who am I if I'm not useful?",
+            wound: { hero: 5, savior: 5, general: 5 }
+          },
+          {
+            text: "Makes me panic - I'll disappear",
+            wound: { performer: 5, chameleon: 5 }
+          },
+          {
+            text: "Sounds impossible - there's too much need",
+            wound: { victim: 5, empath: 5 }
+          },
+          {
+            text: "Is exactly what I want but can't access",
+            wound: { stoic: 5, fortress: 5 }
+          },
+          {
+            text: "Sounds peaceful and achievable",
+            wound: {}
+          }
+        ]
+      }
     ];
 
     function $(sel) { return document.querySelector(sel); }
